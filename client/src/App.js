@@ -27,7 +27,7 @@ function App() {
   const [workHoursData, setWorkHoursData] = useState([]);
 
   const apiEndpoint = 'http://localhost:5001';
-  
+
   // Fetch settings from the backend when the component mounts
   useEffect(() => {
     const fetchSettings = async () => {
