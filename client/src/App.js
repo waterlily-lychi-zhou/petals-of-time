@@ -6,29 +6,38 @@ import StatusIndicator from './components/StatusIndicator';
 import Settings from './components/Settings';
 import SettingsButton from './components/SettingsButton';
 import Chart from './components/Chart';
-import React, { useState, useEffect } from 'react';
+import ChartButton from './components/ChartButton'; 
+import ReturnButton from './components/ReturnButton';
+import TomatoIcon from './components/TomatoIcon';
+import React, { useState, useEffect, useRef } from 'react';
 
 function App() {
-  const [workPeriod, setWorkPeriod] = useState(0.1 * 60);
-  const [breakPeriod, setBreakPeriod] = useState(0.1 * 60);
-  const [longRest, setLongRest] = useState(0.1 * 60);
-  const [sessionCount, setSessionCount] = useState(2);
+  const [workPeriod, setWorkPeriod] = useState(1 * 60);           // focus time period
+  const [breakPeriod, setBreakPeriod] = useState(1 * 60);         // break time period
+  const [longRest, setLongRest] = useState(5 * 60);               // long rest time period
+  const [sessionCount, setSessionCount] = useState(4);            // sessions before long rest
+  const [timeLeft, setTimeLeft] = useState(workPeriod);           // timeLeft for timer
 
-  const [timeLeft, setTimeLeft] = useState(workPeriod);
-  const [isCounting, setIsCounting] = useState(false);
-  const [isWorkSession, setIsWorkSession] = useState(true);
-  const [lotusCount, setLotusCount] = useState(0);
-  const [isTransition, setIsTransition] = useState(false);
-  const [tranIsPaused, setTranIsPaused] = useState(false);
-  const [tranTime, setTranTime] = useState(5);
-  const [completedSessions, setCompletedSessions] = useState(0);
-  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
-  const [lastUpdateDate, setLastUpdateDate] = useState(new Date().toISOString().split('T')[0]);
-  const [workHoursData, setWorkHoursData] = useState([]);
+  const [isCounting, setIsCounting] = useState(false);            // timer is counting
+  const [isWorkSession, setIsWorkSession] = useState(true);       // work timer or break timer
+  const [lotusCount, setLotusCount] = useState(0);                // session completed for the day
+  const [completedSessions, setCompletedSessions] = useState(0);  // session completed for the day
+
+  const [isTransition, setIsTransition] = useState(false);        // on/off state for transition page
+  const [tranIsPaused, setTranIsPaused] = useState(false);        // pause button in transition page
+  const [tranTime, setTranTime] = useState(5);                    // transition time
+
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);    // on/off state for Settings page
+  const [isChartOpen, setIsChartOpen] = useState(false);          // on/off state for Chart page
+
+  const [lastUpdateDate, setLastUpdateDate] = useState(new Date().toISOString().split('T')[0]);   // last updated date for chart data
+  const [workHoursData, setWorkHoursData] = useState([]);         // work data for chart
+  const [tomatoIcons, setTomatoIcons] = useState([]);             // tomato array for session achievements
 
   const apiEndpoint = 'http://localhost:5001';
 
   // Fetch settings from the backend when the component mounts
+  // Update timer if settings parameters changed
   useEffect(() => {
     const fetchSettings = async () => {
       try {
@@ -51,24 +60,28 @@ function App() {
   // Fetch work hours data from the backend to display the chart
   useEffect(() => {
     const fetchWorkHours = async () => {
-      try {
-        const response = await fetch(`${apiEndpoint}/work-hours`);
-        const data = await response.json();
-        setWorkHoursData(data.map((entry) => ({
-          date: entry.date,
-          hours: entry.work_time / 60,
-        })))
-      } catch (e) {
-        console.error('Error fetching work hours:', e);
+      if (isChartOpen) {
+        try {
+          const response = await fetch(`${apiEndpoint}/work-hours`);
+          const data = await response.json();
+          setWorkHoursData(data.map((entry) => ({
+            date: entry.date,                      // date of work record
+            hours: entry.work_time / 60,           // work hours in that date
+          })))
+        } catch (e) {
+          console.error('Error fetching work hours:', e);
+        }
       }
     }
     fetchWorkHours();
-  }, [lotusCount])
+  }, [isChartOpen, lotusCount])
 
+  // For a new day, clear the tomato data, set date as today.
   useEffect(() => {
     const today = new Date().toISOString().split('T')[0];
     if (lastUpdateDate !== today) {
       setLotusCount(0);
+      setTomatoIcons([]);
       setLastUpdateDate(today);
     }
   }, [lastUpdateDate]);
@@ -87,18 +100,19 @@ function App() {
       const newWorkPeriod = newSettings.workPeriod * 60;
       const newBreakPeriod = newSettings.breakPeriod * 60;
       const newLongRest = newSettings.longRest * 60;
-      
+
       setWorkPeriod(newWorkPeriod);
       setBreakPeriod(newBreakPeriod);
       setLongRest(newLongRest);
       setSessionCount(newSettings.sessionCount);
-    
+
       // Update `timeLeft` immediately when settings change
       setTimeLeft(isWorkSession ? newWorkPeriod : newBreakPeriod);
     } catch (e) {
-    console.error('Error updating settings:', e);
+      console.error('Error updating settings:', e);
+    }
   }
-  }
+
 
   const recordWorkSession = async (workMinutes) => {
     try {
@@ -110,8 +124,8 @@ function App() {
         },
         body: JSON.stringify({
           date: today,
-          workTime: workMinutes,
-          completedSessions: 1,
+          work_time: workMinutes,
+          completed_sessions: 1,
         }),
       });
     } catch (error) {
@@ -127,6 +141,16 @@ function App() {
       setLastUpdateDate(today);
     }
   }, [lastUpdateDate]); */
+  const lotusCountRef = useRef(0);
+    // Add tomato icon at a random position at the bottom of the page
+  const addTomatoIcon = () => {
+    const randomX = Math.random() * 90; // Random position within 90% of the width
+    const newTomato = {
+      id: lotusCount,
+      left: `${randomX}%`,
+    };
+    setTomatoIcons((prevIcons) => [...prevIcons, newTomato]);
+  };
 
   // the work or break countdown (25min, 5min)
   useEffect(() => {
@@ -147,6 +171,14 @@ function App() {
     } 
     return () => clearTimeout(timer);
   }, [isCounting, timeLeft, isWorkSession]);
+
+  // Watch for lotusCount change to add tomato icon
+  useEffect(() => {
+    if (lotusCountRef.current !== lotusCount) {
+      addTomatoIcon();
+      lotusCountRef.current = lotusCount;
+    }
+  }, [lotusCount]);
 
   // the transition countdown (5s)
   useEffect(() => {
@@ -174,6 +206,12 @@ function App() {
     return () => clearTimeout(tranTimer);
   }, [tranTime, isTransition, tranIsPaused, isWorkSession, workPeriod, breakPeriod, longRest, completedSessions, sessionCount ]);
 
+  // tag work or break session to the body, to make the body changes colors
+  useEffect(() => {
+    document.body.classList.toggle('work-session', isWorkSession);
+    document.body.classList.toggle('break-session', !isWorkSession);
+  }, [isWorkSession]);
+
   const toggleTimer = () => {
     setIsCounting(!isCounting);
   };
@@ -190,47 +228,55 @@ function App() {
     setIsTransition(false);
   }
 
+  const backToHome = () => {
+    setIsSettingsOpen(false);
+    setIsChartOpen(false)
+  }
 
   return (
-    <div className="App">
+    <div className={`App ${isWorkSession ? 'work-session' : 'break-session'}`}>
+      {(isSettingsOpen || isChartOpen) ? (<ReturnButton backToHome={backToHome} />) : null }
       <SettingsButton toggleSettings={() => setIsSettingsOpen(prevState => !prevState)} />
+      <ChartButton toggleChart={() => setIsChartOpen(prevState => !prevState)} />
       {isSettingsOpen ? (
         <Settings 
-        onSettingsChange={handleSettingsChange} 
-        closeSettings={() => setIsSettingsOpen(false)} 
+          onSettingsChange={handleSettingsChange} 
+          closeSettings={() => setIsSettingsOpen(false)} 
         />
-      ) : (
-      <div>
-        <LotusCount lotusCount={lotusCount} />
-        <div className="main">
-          {isTransition ? (
-            <StatusIndicator 
-              isWorkSession={isWorkSession}
-              pauseTran={pauseTran}
-              tranTime={tranTime}
-              tranIsPaused={tranIsPaused}
-            />
-          ) : isWorkSession ? (
-            <Work 
-              timeLeft={timeLeft} 
-              isCounting={isCounting} 
-              toggleTimer={toggleTimer} 
-              restartTimer={restartTimer} 
-            />
-          ) : (
-            <Break 
-              timeLeft={timeLeft} 
-              isCounting={isCounting} 
-              toggleTimer={toggleTimer} 
-              restartTimer={restartTimer}/>
-          )}
-        </div>
+      ) : isChartOpen ? (
         <Chart workData={workHoursData} />
-      </div>
-
-      )
-      }
-
+      ) : (
+        <div>
+          {/* <LotusCount lotusCount={lotusCount} /> */}
+          <div className="main">
+            {isTransition ? (
+              <StatusIndicator 
+                isWorkSession={isWorkSession}
+                pauseTran={pauseTran}
+                tranTime={tranTime}
+                tranIsPaused={tranIsPaused}
+              />
+            ) : isWorkSession ? (
+              <Work 
+                timeLeft={timeLeft} 
+                isCounting={isCounting} 
+                toggleTimer={toggleTimer} 
+                restartTimer={restartTimer} 
+              />
+            ) : (
+              <Break 
+                timeLeft={timeLeft} 
+                isCounting={isCounting} 
+                toggleTimer={toggleTimer} 
+                restartTimer={restartTimer}
+              />
+            )}
+          </div>
+          {tomatoIcons.map((tomato) => (
+            <TomatoIcon key={tomato.id} left={tomato.left} />
+          ))}
+        </div>
+      )}
     </div>
   );
 }

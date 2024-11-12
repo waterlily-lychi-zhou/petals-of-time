@@ -18,8 +18,8 @@ Progress:
 - [x] Session Counter
 - [x] Settings 
 - [x] SQLite Backend (daily sessions log, new settings for workhours and others)
-- [] Chart for daily sessions data
-- [] UI Design
-- [] UX Design
-- [] CSS implementation
-- [] Sound Effect
+- [ ] Chart for daily sessions data
+- [ ] UI Design
+- [ ] UX Design
+- [ ] CSS implementation
+- [ ] Sound Effect

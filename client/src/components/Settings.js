@@ -27,7 +27,7 @@ function Settings ({ onSettingsChange, closeSettings }) {
         <span>mins</span>
       </div>
       <div>
-        <label>Short Rest</label>
+        <label>Short Break</label>
         <input
           type="number"
           value={breakPeriodInput}
@@ -45,12 +45,13 @@ function Settings ({ onSettingsChange, closeSettings }) {
         <span>mins</span>
       </div>
       <div>
-        <label>Sessions Before Long Rest</label>
+        <label>Before Long Rest</label>
         <input
           type="number"
           value={sessionCountInput}
           onChange={(e) => setSessionCountInput(e.target.value)}
         />
+        <span>streaks</span>
       </div>
       <button onClick={handleSave}>Save</button>
 
