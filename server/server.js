@@ -54,9 +54,9 @@ app.post('/settings', (req, res) => {
 
 // Endpoint to get user settings
 app.get('/settings', (req, res) => {
-  const getSettingsQuery = `SELECT * FROM Settings_1 WHERE id = 1`;
+  const getSettingsQuery = `SELECT * FROM Settings_1`;
 
-  db.get(getSettingsQuery, [], (err, row) => {
+  db.all(getSettingsQuery, [], (err, row) => {
     if (err) {
       console.error('Error retrieving settings:', err.message);
       return res.status(500).json({ error: 'Failed to retrieve settings' });

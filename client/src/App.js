@@ -36,19 +36,25 @@ function App() {
 
   const apiEndpoint = 'http://localhost:5001';
 
+  // Add a ref to track whether a session was completed
+
   // Fetch settings from the backend when the component mounts
   // Update timer if settings parameters changed
   useEffect(() => {
     const fetchSettings = async () => {
       try {
         const response = await fetch(`${apiEndpoint}/settings`);
-        const settings = await response.json();
+        let settings = await response.json();
+        settings = settings[-1];
+        // TODO: Try console.log more.
+        // TODO: Be cautious about data type.
         if (settings) {
           setWorkPeriod(settings.work_period);
           setBreakPeriod(settings.break_period);
           setLongRest(settings.long_rest);
           setSessionCount(settings.session_count);
           setTimeLeft(settings.work_period);
+          console.log(settings);
         }
       } catch (e) {
         console.error('Error fetching settings:', e);
@@ -81,7 +87,7 @@ function App() {
     const today = new Date().toISOString().split('T')[0];
     if (lastUpdateDate !== today) {
       setLotusCount(0);
-      setTomatoIcons([]);
+      /* setTomatoIcons([]); */
       setLastUpdateDate(today);
     }
   }, [lastUpdateDate]);
@@ -155,6 +161,7 @@ function App() {
   // the work or break countdown (25min, 5min)
   useEffect(() => {
     let timer;
+
     if (isCounting && timeLeft > 0) { // counting: every 1 sec, time - 1
       timer = setTimeout(() => {
         setTimeLeft(prevTime => prevTime - 1);
@@ -163,22 +170,25 @@ function App() {
       setIsCounting(false);
       setIsTransition(true);
       setTranTime(5);
+
       if (isWorkSession) {
         recordWorkSession(workPeriod/60);
-        setLotusCount(prevCount => prevCount + 1); // if work countdown, add 1 lotus
+        /* setLotusCount(prevCount => prevCount + 1); // if work countdown, add 1 lotus */
+        setLotusCount(prevCount =>  prevCount + 1);
+        addTomatoIcon();
         setCompletedSessions(prevSessions => prevSessions + 1); // add 1 completed session
       }
     } 
     return () => clearTimeout(timer);
   }, [isCounting, timeLeft, isWorkSession]);
 
-  // Watch for lotusCount change to add tomato icon
+/*   // Watch for lotusCount change to add tomato icon
   useEffect(() => {
     if (lotusCountRef.current !== lotusCount) {
       addTomatoIcon();
       lotusCountRef.current = lotusCount;
     }
-  }, [lotusCount]);
+  }, [lotusCount]); */
 
   // the transition countdown (5s)
   useEffect(() => {

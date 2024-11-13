@@ -2,9 +2,12 @@ import { useState } from "react";
 
 function Settings ({ onSettingsChange, closeSettings }) {
   const [workPeriodInput, setWorkPeriodInput] = useState(0.1);
-  const [breakPeriodInput, setBreakPeriodInput] = useState(0.1);
-  const [longRestInput, setLongRestInput] = useState(0.1);
+  const [breakPeriodInput, setBreakPeriodInput] = useState(1);
+  const [longRestInput, setLongRestInput] = useState(1);
   const [sessionCountInput, setSessionCountInput] = useState(4);
+
+
+  // TODO: pass data to Settings
 
   const handleSave = () => {
     onSettingsChange({
