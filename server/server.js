@@ -6,7 +6,7 @@ const db = require('./database');
 const app = express();
 const PORT = 5001;
 
-// Enable CORS
+// Enable CORS bañalds 
 app.use(cors()); 
 app.use(bodyParser.json());
 
